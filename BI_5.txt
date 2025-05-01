@@ -1,0 +1,40 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import accuracy_score
+
+# Load dataset
+df = pd.read_csv("churn-bigml-80.csv")
+
+# Drop irrelevant or highly unique columns (e.g., 'Phone', 'State' if not needed)
+df = df.drop(columns=['Phone', 'State'], errors='ignore')
+
+# Encode categorical variables
+label_encoders = {}
+for column in df.select_dtypes(include=['object']).columns:
+    le = LabelEncoder()
+    df[column] = le.fit_transform(df[column])
+    label_encoders[column] = le
+
+# Features and target
+X = df.drop('Churn', axis=1)
+y = df['Churn']  # Already encoded as 0/1 if label-encoded above
+
+# Split into train/test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Train model
+model = LogisticRegression(max_iter=1000)
+model.fit(X_train, y_train)
+
+# Predict
+y_pred = model.predict(X_test)
+
+# Prepare output for Power BI
+output_df = X_test.copy()
+output_df['Actual_Churn'] = y_test.values
+output_df['Predicted_Churn'] = y_pred
+output_df.reset_index(drop=True, inplace=True)
+
+output_df
